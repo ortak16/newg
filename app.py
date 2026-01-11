@@ -54,10 +54,7 @@ def load_pdf_context():
                 extracted = page.extract_text()
                 if extracted:
                     text += extracted + "\n"
-    except FileNotFoundError:
-        return None
     except Exception:
-        st.error("Lütfen daha sonra deneyiniz.")
         return ""
     return text
 
@@ -70,36 +67,24 @@ def load_web_context(url):
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-        
         for element in soup(["script", "style", "nav", "footer", "header"]):
             element.decompose()
-            
-        text = soup.get_text(separator=' ', strip=True)
-        return text[:15000]
-    except Exception as e:
+        return soup.get_text(separator=' ', strip=True)[:15000]
+    except Exception:
         return ""
 
+pdf_context = load_pdf_context()
 web_url = "https://odb.btu.edu.tr/tr/duyuru/birim/10055" 
 web_context = load_web_context(web_url)
 
-
 base_instruction = """
-Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
+Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Bilgiyi sunarken şu kurallara kesinlikle uy:
 
-ÇOK ÖNEMLİ KONUŞMA KURALLARI:
-1. **Tekrara Düşme:** Her mesajında "Merhaba ben ODB Asistanı" veya "Size yardımcı olmaktan memnuniyet duyarım" gibi giriş cümleleri KURMA. Bunu sadece ilk tanışmada söylemen yeterli.
-2. **Doğrudan Cevap:** Kullanıcı bir şey sorduğunda doğrudan cevaba gir. Sanki karşında arkadaşın varmış gibi konuş ama saygıyı koru.
-3. **Örnek:**
-   - Kötü Cevap: "Merhaba! Ben Asistan. Ders kaydı şöyle yapılır..."
-   - İyi Cevap: "Ders kaydını OBS sistemi üzerinden yapabilirsin. Tarihleri takvimden kontrol etmeyi unutma."
-4. **Bilgi Kaynağı:**
-   - Öncelikle sana verilen PDF verisini ve web sitesi bilgilerini kullan.
-   - PDF'de olmayan genel konularda kendi genel bilgini kullan.
-   - PDF'de veya web sitesinde olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
-   - Cevaplarında asla "PDF verisine göre", "PDF'de bu bilgi yok", "Dosyayı kontrol ettim" gibi ifadeler KULLANMA. Bilgi sende zaten varmış gibi doğal konuş.
-   - Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
-   - Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre", "Belgeye göre" veya "Yazıyor" gibi ifadeler kullanma. Bilgi senin kendi bilginmiş gibi doğrudan söyle.
-   - Birine bilgi veren canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
+1. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Web sitesine göre", "Dosyaya göre" veya "Verilerimde şu belirtilmiş" gibi ifadeler kullanma. Bilgi senin kendi ana bilginmiş gibi doğrudan ve doğal söyle.
+2. **DOĞRUDAN CEVAP:** Kullanıcıya doğrudan çözüm odaklı cevap ver.
+3. **DOĞAL ÜSLUP:** Canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
+4. **BİLGİ SINIRI:** Bilgi kaynaklarda yoksa, "Kaynakta yok" demek yerine "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" de.
+5. **PDF/WEB İFADESİ YASAK:** Asla "PDF verisine göre" veya "Web sitesinden aldığım bilgiye göre" deme.
 """
 
 final_instruction = base_instruction
@@ -115,12 +100,8 @@ bot_avatar = "https://depo.btu.edu.tr/img/sayfa//1691131553_33a20881d67b04f54742
 user_avatar = "👤"
 
 for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        with st.chat_message("user", avatar=user_avatar):
-            st.markdown(msg["content"])
-    else:
-        with st.chat_message("assistant", avatar=bot_avatar):
-            st.markdown(msg["content"])
+    with st.chat_message(msg["role"], avatar=user_avatar if msg["role"] == "user" else bot_avatar):
+        st.markdown(msg["content"])
 
 prompt = st.chat_input("Sorunuzu buraya yazın...")
 
@@ -149,27 +130,17 @@ if prompt:
                 response_text = completion.choices[0].message.content
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
-            
             except Exception:
                 st.error("Lütfen daha sonra deneyiniz.")
 
 if len(st.session_state.messages) == 0:
     st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
-    
-    col1, col2, col3 = st.columns(3)
-    
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("📝 Sosyal Seçmeli Dersler"):
             st.session_state.pending_prompt = "Ders kaydı nasıl yapılır?"
             st.rerun()
-            
     with col2:
-        if st.button("📅 Sınav tarihleri ne zaman?"):
+        if st.button("📅 Sınav Tarihleri"):
             st.session_state.pending_prompt = "Sınav tarihleri ne zaman?"
             st.rerun()
-
-   # with col3:
-   #     if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
-   #         st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
-   #         st.rerun()
-
