@@ -80,6 +80,10 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
    - Öncelikle sana verilen PDF verisini kullan.
    - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
    - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
+5. **PDF'den Bahsetme:** Cevaplarında asla "PDF verisine göre", "PDF'de bu bilgi yok", "Dosyayı kontrol ettim" gibi ifadeler KULLANMA. Bilgi sende zaten varmış gibi doğal konuş.
+6. **Bilmeme Durumu:** Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
+7. **Tekrara Düşme:** Giriş cümleleri (Merhaba ben asistan vb.) kurma, doğrudan soruya cevap ver.
+8. **Samimiyet:** Saygılı ama arkadaş canlısı bir üslup kullan.
 
 Aşağıdaki PDF verisini referans al:
 """
@@ -155,3 +159,4 @@ if len(st.session_state.messages) == 0:
         if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
             st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
             st.rerun()
+
