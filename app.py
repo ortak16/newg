@@ -1,6 +1,8 @@
 import streamlit as st
 from groq import Groq
 from PyPDF2 import PdfReader
+import requests
+from bs4 import BeautifulSoup
 
 st.set_page_config(page_title="BTÜ ODB Asistanı", layout="centered")
 
@@ -66,6 +68,26 @@ def load_pdf_context():
     return text
 
 pdf_context = load_pdf_context()
+@st.cache_data(ttl=3600) # Bilgileri 1 saatte bir tazeler
+def load_web_context(url):
+    try:
+        response = requests.get(url, timeout=5)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Gereksiz kısımları (menü, footer) temizleyip sadece metni alıyoruz
+        for script_or_style in soup(["script", "style"]):
+            script_or_style.decompose()
+        return soup.get_text(separator=' ', strip=True)[:10000] # İlk 10bin karakter
+    except:
+        return ""
+
+web_url = "https://odb.btu.edu.tr/" 
+web_context = load_web_context(web_url)
+
+final_instruction = base_instruction
+if pdf_context:
+    final_instruction += f"\n--- PDF İÇERİĞİ ---\n{pdf_context[:20000]}\n"
+if web_context:
+    final_instruction += f"\n--- WEB SİTESİ GÜNCEL BİLGİLERİ ---\n{web_context}\n"
 
 base_instruction = """
 Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
@@ -80,13 +102,11 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
    - Öncelikle sana verilen PDF verisini kullan.
    - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
    - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
-5. **PDF'den Bahsetme:** Cevaplarında asla "PDF verisine göre", "PDF'de bu bilgi yok", "Dosyayı kontrol ettim" gibi ifadeler KULLANMA. Bilgi sende zaten varmış gibi doğal konuş.
-6. **Bilmeme Durumu:** Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
-7. **Tekrara Düşme:** Giriş cümleleri (Merhaba ben asistan vb.) kurma, doğrudan soruya cevap ver.
-8. **Samimiyet:** Saygılı ama arkadaş canlısı bir üslup kullan.
-9. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre", "Belgeye göre" veya "Yazıyor" gibi ifadeler kullanma. Bilgi senin kendi bilginmiş gibi doğrudan söyle.
-10. **DOĞAL ÜSLUP:** Birine bilgi veren canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
-11. **BİLGİ SINIRI:** Eğer bir bilgi sende veya sana sunulan metinde yoksa, "PDF'de yok" demek yerine "Bu detay hakkında güncel bilgiyi web sitesinden kontrol edebilirsin" de.
+   - Cevaplarında asla "PDF verisine göre", "PDF'de bu bilgi yok", "Dosyayı kontrol ettim" gibi ifadeler KULLANMA. Bilgi sende zaten varmış gibi doğal konuş.
+   - Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
+   - Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre", "Belgeye göre" veya "Yazıyor" gibi ifadeler kullanma. Bilgi senin kendi bilginmiş gibi doğrudan söyle.
+   - Birine bilgi veren canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
+   - Eğer bir bilgi sende veya sana sunulan metinde yoksa, "PDF'de yok" demek yerine "Bu detay hakkında güncel bilgiyi web sitesinden kontrol edebilirsin" de.
 
 Aşağıdaki PDF verisini referans al:
 """
@@ -162,5 +182,6 @@ if len(st.session_state.messages) == 0:
         if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
             st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
             st.rerun()
+
 
 
