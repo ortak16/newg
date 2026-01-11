@@ -163,10 +163,15 @@ if len(st.session_state.messages) == 0:
     st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📝 Sosyal Seçmeli Dersler"):
+        if st.button("📝 Ders Kayıtları"):
             st.session_state.pending_prompt = "Ders kaydı nasıl yapılır?"
             st.rerun()
     with col2:
         if st.button("📅 Sınav Tarihleri"):
             st.session_state.pending_prompt = "Sınav tarihleri ne zaman?"
             st.rerun()
+    with col3:
+        if st.button("Öğretim Üyesiyim Ders Açmak İstiyorum"):
+            st.session_state.pending_prompt = "Ders açmak istiyorum, ne yapmalıyım?"
+            st.rerun()
+
