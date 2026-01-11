@@ -1,0 +1,174 @@
+import streamlit as st
+import google.generativeai as genai
+from PyPDF2 import PdfReader
+
+st.set_page_config(page_title="BTÜ ODB Asistanı", layout="centered")
+
+st.markdown("""
+<style>
+/* Gereksiz öğeleri gizle */
+header, footer, .stDeployButton, [data-testid="stStatusWidget"], button[title="View fullscreen"] {
+    display: none !important;
+}
+/* Sohbet balonları tasarımı */
+[data-testid="stChatMessage"] {
+    border-radius: 15px;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+/* Asistan mesajı */
+[data-testid="stChatMessage"]:nth-child(odd) {
+    background-color: #f8f9fa;
+    border-left: 4px solid #d32f2f;
+}
+/* Kullanıcı mesajı */
+[data-testid="stChatMessage"]:nth-child(even) {
+    background-color: #e3f2fd;
+    border-right: 4px solid #007bff;
+    flex-direction: row-reverse;
+    text-align: right;
+}
+/* --- LOGO BOYUTU AYARI (YENİ) --- */
+/* Avatar kutusunu ve içindeki resmi küçült */
+[data-testid="stChatMessageAvatar"] {
+    width: 35px !important;
+    height: 35px !important;
+}
+[data-testid="stChatMessageAvatar"] img {
+    width: 35px !important;
+    height: 35px !important;
+    object-fit: contain;
+}
+</style>
+""", unsafe_allow_html=True)
+
+if "GOOGLE_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+else:
+    st.error("Lütfen daha sonra deneyiniz.")
+    st.stop()
+
+@st.cache_data
+def load_pdf_context():
+    text = ""
+    try:
+        with open("bilgiler.pdf", "rb") as f:
+            pdf_reader = PdfReader(f)
+            for page in pdf_reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+    except FileNotFoundError:
+        return None
+    except Exception:
+        st.error("Lütfen daha sonra deneyiniz.")
+        return ""
+    return text
+
+pdf_context = load_pdf_context()
+
+base_instruction = """
+Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
+
+ÇOK ÖNEMLİ KONUŞMA KURALLARI:
+1. **Tekrara Düşme:** Her mesajında "Merhaba ben ODB Asistanı" veya "Size yardımcı olmaktan memnuniyet duyarım" gibi giriş cümleleri KURMA. Bunu sadece ilk tanışmada söylemen yeterli.
+2. **Doğrudan Cevap:** Kullanıcı bir şey sorduğunda doğrudan cevaba gir. Sanki karşında arkadaşın varmış gibi konuş ama saygıyı koru.
+3. **Örnek:**
+   - Kötü Cevap: "Merhaba! Ben Asistan. Ders kaydı şöyle yapılır..."
+   - İyi Cevap: "Ders kaydını OBS sistemi üzerinden yapabilirsin. Tarihleri takvimden kontrol etmeyi unutma."
+4. **Bilgi Kaynağı:**
+   - Öncelikle sana verilen PDF verisini kullan.
+   - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
+   - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
+
+Aşağıdaki PDF verisini referans al:
+"""
+
+final_instruction = base_instruction
+if pdf_context:
+    final_instruction += f"\n--- PDF İÇERİĞİ ---\n{pdf_context[:30000]}\n--- SON ---\n"
+else:
+    final_instruction += "\n(Sistemde PDF yok, genel bilgini kullan.)\n"
+
+@st.cache_resource
+def get_model():
+    return genai.GenerativeModel(
+        model_name="gemini-2.5-flash",
+        system_instruction=final_instruction
+    )
+
+try:
+    model = get_model()
+except Exception:
+    st.error("Lütfen daha sonra deneyiniz.")
+    st.stop()
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+bot_avatar = "https://depo.btu.edu.tr/img/sayfa//1691131553_33a20881d67b04f54742.png"
+user_avatar = "👤"
+
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        with st.chat_message("user", avatar=user_avatar):
+            st.markdown(msg["content"])
+    else:
+        with st.chat_message("assistant", avatar=bot_avatar):
+            st.markdown(msg["content"])
+
+prompt = st.chat_input("Sorunuzu buraya yazın...")
+
+if "pending_prompt" in st.session_state and st.session_state.pending_prompt:
+    prompt = st.session_state.pending_prompt
+    del st.session_state.pending_prompt
+
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar=user_avatar):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant", avatar=bot_avatar):
+        with st.spinner("Yazıyor..."): 
+            try:
+                history = [
+                    {"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]}
+                    for m in st.session_state.messages[:-1] 
+                ]
+                
+                chat = model.start_chat(history=history)
+                response = chat.send_message(prompt)
+                
+                if response and response.text:
+                    response_text = response.text
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                else:
+                    st.warning("Lütfen daha sonra deneyiniz.")
+            
+            except Exception:
+                st.error("Lütfen daha sonra deneyiniz.")
+
+if len(st.session_state.messages) == 0:
+    st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("📝 Sosyal Seçmeli Dersler"):
+            st.session_state.pending_prompt = "Ders kaydı nasıl yapılır?"
+            st.rerun()
+            
+    with col2:
+        if st.button("📅 Akademik Takvim"):
+            st.session_state.pending_prompt = "Sınav tarihleri ne zaman?"
+            st.rerun()
+
+    with col3:
+        if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
+            st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
+            st.rerun()
+
+
+
+
