@@ -8,30 +8,24 @@ st.set_page_config(page_title="BTÜ ODB Asistanı", layout="centered")
 
 st.markdown("""
 <style>
-/* Gereksiz öğeleri gizle */
 header, footer, .stDeployButton, [data-testid="stStatusWidget"], button[title="View fullscreen"] {
     display: none !important;
 }
-/* Sohbet balonları tasarımı */
 [data-testid="stChatMessage"] {
     border-radius: 15px;
     margin-bottom: 10px;
     padding: 10px;
 }
-/* Asistan mesajı */
 [data-testid="stChatMessage"]:nth-child(odd) {
     background-color: #f8f9fa;
     border-left: 4px solid #d32f2f;
 }
-/* Kullanıcı mesajı */
 [data-testid="stChatMessage"]:nth-child(even) {
     background-color: #e3f2fd;
     border-right: 4px solid #007bff;
     flex-direction: row-reverse;
     text-align: right;
 }
-/* --- LOGO BOYUTU AYARI (YENİ) --- */
-/* Avatar kutusunu ve içindeki resmi küçült */
 [data-testid="stChatMessageAvatar"] {
     width: 35px !important;
     height: 35px !important;
@@ -67,27 +61,20 @@ def load_pdf_context():
         return ""
     return text
 
-pdf_context = load_pdf_context()
-@st.cache_data(ttl=3600) # Bilgileri 1 saatte bir tazeler
+@st.cache_data(ttl=3600) 
 def load_web_context(url):
     try:
         response = requests.get(url, timeout=5)
         soup = BeautifulSoup(response.text, 'html.parser')
-        # Gereksiz kısımları (menü, footer) temizleyip sadece metni alıyoruz
         for script_or_style in soup(["script", "style"]):
             script_or_style.decompose()
-        return soup.get_text(separator=' ', strip=True)[:10000] # İlk 10bin karakter
+        return soup.get_text(separator=' ', strip=True)[:10000]
     except:
         return ""
 
+pdf_context = load_pdf_context()
 web_url = "https://odb.btu.edu.tr/" 
 web_context = load_web_context(web_url)
-
-final_instruction = base_instruction
-if pdf_context:
-    final_instruction += f"\n--- PDF İÇERİĞİ ---\n{pdf_context[:20000]}\n"
-if web_context:
-    final_instruction += f"\n--- WEB SİTESİ GÜNCEL BİLGİLERİ ---\n{web_context}\n"
 
 base_instruction = """
 Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
@@ -99,23 +86,20 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
    - Kötü Cevap: "Merhaba! Ben Asistan. Ders kaydı şöyle yapılır..."
    - İyi Cevap: "Ders kaydını OBS sistemi üzerinden yapabilirsin. Tarihleri takvimden kontrol etmeyi unutma."
 4. **Bilgi Kaynağı:**
-   - Öncelikle sana verilen PDF verisini kullan.
-   - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
-   - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
+   - Öncelikle sana verilen PDF verisini ve web sitesi bilgilerini kullan.
+   - PDF'de olmayan genel konularda kendi genel bilgini kullan.
+   - PDF'de veya web sitesinde olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
    - Cevaplarında asla "PDF verisine göre", "PDF'de bu bilgi yok", "Dosyayı kontrol ettim" gibi ifadeler KULLANMA. Bilgi sende zaten varmış gibi doğal konuş.
    - Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
    - Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre", "Belgeye göre" veya "Yazıyor" gibi ifadeler kullanma. Bilgi senin kendi bilginmiş gibi doğrudan söyle.
    - Birine bilgi veren canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
-   - Eğer bir bilgi sende veya sana sunulan metinde yoksa, "PDF'de yok" demek yerine "Bu detay hakkında güncel bilgiyi web sitesinden kontrol edebilirsin" de.
-
-Aşağıdaki PDF verisini referans al:
 """
 
 final_instruction = base_instruction
 if pdf_context:
-    final_instruction += f"\n--- PDF İÇERİĞİ ---\n{pdf_context[:30000]}\n--- SON ---\n"
-else:
-    final_instruction += "\n(Sistemde PDF yok, genel bilgini kullan.)\n"
+    final_instruction += f"\n--- REHBER BİLGİLER ---\n{pdf_context[:25000]}\n"
+if web_context:
+    final_instruction += f"\n--- WEB SİTESİNDEN ANLIK BİLGİLER ---\n{web_context}\n"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -145,7 +129,6 @@ if prompt:
     with st.chat_message("assistant", avatar=bot_avatar):
         with st.spinner("Yazıyor..."): 
             try:
-                # Groq için mesaj geçmişini hazırla
                 messages_for_groq = [{"role": "system", "content": final_instruction}]
                 for m in st.session_state.messages:
                     messages_for_groq.append({"role": m["role"], "content": m["content"]})
@@ -174,14 +157,11 @@ if len(st.session_state.messages) == 0:
             st.rerun()
             
     with col2:
-        if st.button("📅 Akademik Takvim"):
+        if st.button("📅 Sınav tarihleri ne zaman?"):
             st.session_state.pending_prompt = "Sınav tarihleri ne zaman?"
             st.rerun()
 
-    with col3:
-        if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
-            st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
-            st.rerun()
-
-
-
+   # with col3:
+   #     if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
+   #         st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
+   #         st.rerun()
