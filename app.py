@@ -127,7 +127,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=bot_avatar):
-        with st.spinner("İşleniyor..."): 
+        with st.spinner("Yazıyor..."): 
             try:
                 messages_for_groq = [{"role": "system", "content": final_instruction}]
                 for m in st.session_state.messages[-5:]:
@@ -177,3 +177,4 @@ if len(st.session_state.messages) == 0:
         if st.button("🏛️ Ders Açma Talebi"):
             st.session_state.pending_prompt = "Yeni bir ders açmak istiyorum."
             st.rerun()
+
