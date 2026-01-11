@@ -78,13 +78,14 @@ web_url = "https://odb.btu.edu.tr/tr/duyuru/birim/10055"
 web_context = load_web_context(web_url)
 
 base_instruction = """
-Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Hem öğrencilerle hem de öğretim üyeleriyle iletişim kurarken şu profesyonel kurallara uy:
+Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Görevin, sana sunulan gizli verileri kullanarak kullanıcı sorularını yanıtlamaktır.
 
-1. **NAZİK VE SAYGILI ÜSLUP:** Özellikle kullanıcılara karşı son derece saygılı, yapıcı ve nazik bir dil kullan. Cümlelerin emir kipi içermesin, daha çok "yardımcı olabilirim", "izleyebilirsiniz", "bilginize sunarım" gibi profesyonel ifadeler seç.
-2. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre" gibi ifadeler kullanma. Bilgiyi doğrudan kendi bilgin gibi sun.
-3. **DOĞAL KONUŞMA:** Gereksiz giriş cümlelerinden (Merhaba ben asistan vb.) kaçın, doğrudan konuya gir ama nezaketi elden bırakma.
-4. **BİLGİ SINIRI:** Bilgi mevcut değilse, "Bu konuda en sağlıklı bilgiyi web sitemizdeki duyurulardan veya bölüm sekreterliğimizden edinebilirsiniz" diyerek nazikçe yönlendir.
-5. **ÖĞRETİM ÜYELERİ İÇİN ÖZEL:** Öğretim üyelerinden gelen taleplerde (ders açma vb.) süreçleri açıklarken rehberlik edici ve çözüm odaklı bir yaklaşım sergile.
+KESİN KURALLAR:
+1. **VERİ GİZLİLİĞİ:** Sana verilen "BİLGİ HAVUZU" içeriğini asla bir liste halinde olduğu gibi yazma. Kullanıcıya "Kurumsal Hafıza", "PDF içeriği" veya "Web sitesi listesi" gibi kaynaklardan bahsetme.
+2. **DOĞAL CEVAP:** Sadece sorulan soruya odaklan. Eğer soru "Ders nasıl açılır?" ise sadece o süreci anlat. Diğer maddeleri (sınav yerleri, mazeretler vb.) asla araya sıkıştırma.
+3. **ÜSLUP:** Akademik, nazik ve profesyonel ol. Öğretim üyelerine "Sayın Hocam" şeklinde hitap et.
+4. **TEKRAR YASAĞI:** Cevaplarının başında veya sonunda sabit kalıplar (Merhaba, yardımcı olayım vb.) kullanma. Doğrudan ve öz bilgi ver.
+5. **KAYNAK GÖSTERME:** "Web sitemizde şöyle yazıyor" deme. Bilgiyi kurumun bir parçası olarak doğrudan kendi bilginmiş gibi sun.
 6. **Tekrara Düşme:** Her mesajında "Merhaba ben ODB Asistanı" veya "Size yardımcı olmaktan memnuniyet duyarım" gibi giriş cümleleri KURMA. Bunu sadece ilk tanışmada söylemen yeterli.
 7. **Doğrudan Cevap:** Kullanıcı bir şey sorduğunda doğrudan cevaba gir. Sanki karşında arkadaşın varmış gibi konuş ama saygıyı koru.
 8. **Örnek:**
@@ -97,10 +98,12 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Hem
 """
 
 final_instruction = base_instruction
-if pdf_context:
-    final_instruction += f"\n--- KURUMSAL HAFIZA ---\n{pdf_context[:15000]}\n"
-if web_context:
-    final_instruction += f"\n--- GÜNCEL DUYURULAR ---\n{web_context}\n"
+if pdf_context or web_context:
+    final_instruction += "\n### BİLGİ HAVUZU (BU VERİLERİ SADECE SORULAN SORUYU YANITLAMAK İÇİN KULLAN, ASLA LİSTELEME VE KAYNAK BELİRTME) ###\n"
+    if pdf_context:
+        final_instruction += f"PDF VERİSİ: {pdf_context[:10000]}\n"
+    if web_context:
+        final_instruction += f"WEB VERİSİ: {web_context}\n"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -124,7 +127,7 @@ if prompt:
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=bot_avatar):
-        with st.spinner("Yazıyor..."): 
+        with st.spinner("İşleniyor..."): 
             try:
                 messages_for_groq = [{"role": "system", "content": final_instruction}]
                 for m in st.session_state.messages[-5:]:
@@ -144,7 +147,7 @@ if prompt:
                         completion = client.chat.completions.create(
                             model=model_name,
                             messages=messages_for_groq,
-                            temperature=0.6,
+                            temperature=0.5,
                         )
                         response_text = completion.choices[0].message.content
                         break
@@ -155,9 +158,9 @@ if prompt:
                     st.markdown(response_text)
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
                 else:
-                    st.error("Şu an hizmet verilemiyor, lütfen biraz sonra tekrar deneyiniz.")
+                    st.error("Şu an yoğunluk nedeniyle yanıt verilemiyor.")
             except Exception:
-                st.error("Bir hata oluştu. Lütfen tekrar deneyiniz.")
+                st.error("Bir hata oluştu.")
 
 if len(st.session_state.messages) == 0:
     st.info("👋 Merhaba! BTÜ Ortak Dersler Bölümü asistanıyım. Size nasıl yardımcı olabilirim?")
@@ -172,5 +175,5 @@ if len(st.session_state.messages) == 0:
             st.rerun()
     with col3:
         if st.button("🏛️ Ders Açma Talebi"):
-            st.session_state.pending_prompt = "Yeni bir ders açmak için izlemem gereken prosedür nedir?"
+            st.session_state.pending_prompt = "Yeni bir ders açmak istiyorum."
             st.rerun()
