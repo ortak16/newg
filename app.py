@@ -98,9 +98,9 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Hem
 
 final_instruction = base_instruction
 if pdf_context:
-    final_instruction += f"\n--- REHBER BİLGİLER ---\n{pdf_context[:15000]}\n"
+    final_instruction += f"\n--- KURUMSAL HAFIZA ---\n{pdf_context[:15000]}\n"
 if web_context:
-    final_instruction += f"\n--- WEB SİTESİNDEN ANLIK BİLGİLER ---\n{web_context}\n"
+    final_instruction += f"\n--- GÜNCEL DUYURULAR ---\n{web_context}\n"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -144,7 +144,7 @@ if prompt:
                         completion = client.chat.completions.create(
                             model=model_name,
                             messages=messages_for_groq,
-                            temperature=0.7,
+                            temperature=0.6,
                         )
                         response_text = completion.choices[0].message.content
                         break
@@ -155,22 +155,22 @@ if prompt:
                     st.markdown(response_text)
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
                 else:
-                    st.error("Şu an tüm modellerde yoğunluk var. Lütfen 1 dakika sonra tekrar dene.")
+                    st.error("Şu an hizmet verilemiyor, lütfen biraz sonra tekrar deneyiniz.")
             except Exception:
-                st.error("Bir hata oluştu. Lütfen tekrar dene.")
+                st.error("Bir hata oluştu. Lütfen tekrar deneyiniz.")
 
 if len(st.session_state.messages) == 0:
-    st.info("👋 Merhaba! Bursa Teknik Üniversitesi Ortak Dersler Bölümü asistanıyım. Size nasıl yardımcı olabilirim?")
+    st.info("👋 Merhaba! BTÜ Ortak Dersler Bölümü asistanıyım. Size nasıl yardımcı olabilirim?")
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📝 Ders Kayıtları"):
-            st.session_state.pending_prompt = "Ders kaydı süreci hakkında bilgi alabilir miyim?"
+            st.session_state.pending_prompt = "Ders kayıt süreci hakkında bilgi alabilir miyim?"
             st.rerun()
     with col2:
         if st.button("📅 Sınav Tarihleri"):
-            st.session_state.pending_prompt = "Sınav takvimi hakkında bilgi verebilir misiniz?"
+            st.session_state.pending_prompt = "Sınav takvimine nereden ulaşabilirim?"
             st.rerun()
     with col3:
         if st.button("🏛️ Ders Açma Talebi"):
-            st.session_state.pending_prompt = "Öğretim üyesi olarak yeni bir ders açmak için hangi süreçleri izlemeliyim?"
+            st.session_state.pending_prompt = "Yeni bir ders açmak için izlemem gereken prosedür nedir?"
             st.rerun()
