@@ -62,14 +62,14 @@ def load_pdf_context():
 def load_web_context(url):
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         for element in soup(["script", "style", "nav", "footer", "header"]):
             element.decompose()
-        return soup.get_text(separator=' ', strip=True)[:15000]
+        return soup.get_text(separator=' ', strip=True)[:10000]
     except Exception:
         return ""
 
@@ -89,7 +89,7 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Bil
 
 final_instruction = base_instruction
 if pdf_context:
-    final_instruction += f"\n--- REHBER BİLGİLER ---\n{pdf_context[:25000]}\n"
+    final_instruction += f"\n--- REHBER BİLGİLER ---\n{pdf_context[:15000]}\n"
 if web_context:
     final_instruction += f"\n--- WEB SİTESİNDEN ANLIK BİLGİLER ---\n{web_context}\n"
 
@@ -118,20 +118,27 @@ if prompt:
         with st.spinner("Yazıyor..."): 
             try:
                 messages_for_groq = [{"role": "system", "content": final_instruction}]
-                for m in st.session_state.messages:
+                for m in st.session_state.messages[-5:]:
                     messages_for_groq.append({"role": m["role"], "content": m["content"]})
 
-                completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages_for_groq,
-                    temperature=0.7,
-                )
+                try:
+                    completion = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=messages_for_groq,
+                        temperature=0.7,
+                    )
+                except Exception:
+                    completion = client.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=messages_for_groq,
+                        temperature=0.6,
+                    )
                 
                 response_text = completion.choices[0].message.content
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
             except Exception:
-                st.error("Lütfen daha sonra deneyiniz.")
+                st.error("Şu an yoğunluk var, lütfen biraz sonra tekrar dene.")
 
 if len(st.session_state.messages) == 0:
     st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
