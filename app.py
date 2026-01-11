@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 from PyPDF2 import PdfReader
 
 st.set_page_config(page_title="BTÜ ODB Asistanı", layout="centered")
@@ -42,8 +42,8 @@ header, footer, .stDeployButton, [data-testid="stStatusWidget"], button[title="V
 </style>
 """, unsafe_allow_html=True)
 
-if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+if "GROQ_API_KEY" in st.secrets:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 else:
     st.error("Lütfen daha sonra deneyiniz.")
     st.stop()
@@ -90,19 +90,6 @@ if pdf_context:
 else:
     final_instruction += "\n(Sistemde PDF yok, genel bilgini kullan.)\n"
 
-@st.cache_resource
-def get_model():
-    return genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        system_instruction=final_instruction
-    )
-
-try:
-    model = get_model()
-except Exception:
-    st.error("Lütfen daha sonra deneyiniz.")
-    st.stop()
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -131,20 +118,20 @@ if prompt:
     with st.chat_message("assistant", avatar=bot_avatar):
         with st.spinner("Yazıyor..."): 
             try:
-                history = [
-                    {"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]}
-                    for m in st.session_state.messages[:-1] 
-                ]
+                # Groq için mesaj geçmişini hazırla
+                messages_for_groq = [{"role": "system", "content": final_instruction}]
+                for m in st.session_state.messages:
+                    messages_for_groq.append({"role": m["role"], "content": m["content"]})
+
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages_for_groq,
+                    temperature=0.7,
+                )
                 
-                chat = model.start_chat(history=history)
-                response = chat.send_message(prompt)
-                
-                if response and response.text:
-                    response_text = response.text
-                    st.markdown(response_text)
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
-                else:
-                    st.warning("Lütfen daha sonra deneyiniz.")
+                response_text = completion.choices[0].message.content
+                st.markdown(response_text)
+                st.session_state.messages.append({"role": "assistant", "content": response_text})
             
             except Exception:
                 st.error("Lütfen daha sonra deneyiniz.")
@@ -168,7 +155,3 @@ if len(st.session_state.messages) == 0:
         if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
             st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
             st.rerun()
-
-
-
-
