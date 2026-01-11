@@ -85,6 +85,15 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Bil
 3. **DOĞAL ÜSLUP:** Canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
 4. **BİLGİ SINIRI:** Bilgi kaynaklarda yoksa, "Kaynakta yok" demek yerine "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" de.
 5. **PDF/WEB İFADESİ YASAK:** Asla "PDF verisine göre" veya "Web sitesinden aldığım bilgiye göre" deme.
+6. **Tekrara Düşme:** Her mesajında "Merhaba ben ODB Asistanı" veya "Size yardımcı olmaktan memnuniyet duyarım" gibi giriş cümleleri KURMA. Bunu sadece ilk tanışmada söylemen yeterli.
+7. **Doğrudan Cevap:** Kullanıcı bir şey sorduğunda doğrudan cevaba gir. Sanki karşında arkadaşın varmış gibi konuş ama saygıyı koru.
+8. **Örnek:**
+   - Kötü Cevap: "Merhaba! Ben Asistan. Ders kaydı şöyle yapılır..."
+   - İyi Cevap: "Ders kaydını OBS sistemi üzerinden yapabilirsin. Tarihleri takvimden kontrol etmeyi unutma."
+9. **Bilgi Kaynağı:**
+   - Öncelikle sana verilen PDF verisini kullan.
+   - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
+   - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
 """
 
 final_instruction = base_instruction
@@ -121,24 +130,34 @@ if prompt:
                 for m in st.session_state.messages[-5:]:
                     messages_for_groq.append({"role": m["role"], "content": m["content"]})
 
-                try:
-                    completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=messages_for_groq,
-                        temperature=0.7,
-                    )
-                except Exception:
-                    completion = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=messages_for_groq,
-                        temperature=0.6,
-                    )
+                models_to_try = [
+                    "llama-3.3-70b-versatile",
+                    "llama-3.1-70b-versatile",
+                    "mixtral-8x7b-32768",
+                    "llama-3.1-8b-instant",
+                    "gemma2-9b-it"
+                ]
                 
-                response_text = completion.choices[0].message.content
-                st.markdown(response_text)
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
+                response_text = None
+                for model_name in models_to_try:
+                    try:
+                        completion = client.chat.completions.create(
+                            model=model_name,
+                            messages=messages_for_groq,
+                            temperature=0.7,
+                        )
+                        response_text = completion.choices[0].message.content
+                        break
+                    except Exception:
+                        continue
+                
+                if response_text:
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                else:
+                    st.error("Şu an tüm modellerde yoğunluk var. Lütfen 1 dakika sonra tekrar dene.")
             except Exception:
-                st.error("Şu an yoğunluk var, lütfen biraz sonra tekrar dene.")
+                st.error("Bir hata oluştu. Lütfen tekrar dene.")
 
 if len(st.session_state.messages) == 0:
     st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
