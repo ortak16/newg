@@ -78,13 +78,13 @@ web_url = "https://odb.btu.edu.tr/tr/duyuru/birim/10055"
 web_context = load_web_context(web_url)
 
 base_instruction = """
-Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Bilgiyi sunarken şu kurallara kesinlikle uy:
+Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın. Hem öğrencilerle hem de öğretim üyeleriyle iletişim kurarken şu profesyonel kurallara uy:
 
-1. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Web sitesine göre", "Dosyaya göre" veya "Verilerimde şu belirtilmiş" gibi ifadeler kullanma. Bilgi senin kendi ana bilginmiş gibi doğrudan ve doğal söyle.
-2. **DOĞRUDAN CEVAP:** Kullanıcıya doğrudan çözüm odaklı cevap ver.
-3. **DOĞAL ÜSLUP:** Canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
-4. **BİLGİ SINIRI:** Bilgi kaynaklarda yoksa, "Kaynakta yok" demek yerine "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" de.
-5. **PDF/WEB İFADESİ YASAK:** Asla "PDF verisine göre" veya "Web sitesinden aldığım bilgiye göre" deme.
+1. **NAZİK VE SAYGILI ÜSLUP:** Özellikle kullanıcılara karşı son derece saygılı, yapıcı ve nazik bir dil kullan. Cümlelerin emir kipi içermesin, daha çok "yardımcı olabilirim", "izleyebilirsiniz", "bilginize sunarım" gibi profesyonel ifadeler seç.
+2. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre" gibi ifadeler kullanma. Bilgiyi doğrudan kendi bilgin gibi sun.
+3. **DOĞAL KONUŞMA:** Gereksiz giriş cümlelerinden (Merhaba ben asistan vb.) kaçın, doğrudan konuya gir ama nezaketi elden bırakma.
+4. **BİLGİ SINIRI:** Bilgi mevcut değilse, "Bu konuda en sağlıklı bilgiyi web sitemizdeki duyurulardan veya bölüm sekreterliğimizden edinebilirsiniz" diyerek nazikçe yönlendir.
+5. **ÖĞRETİM ÜYELERİ İÇİN ÖZEL:** Öğretim üyelerinden gelen taleplerde (ders açma vb.) süreçleri açıklarken rehberlik edici ve çözüm odaklı bir yaklaşım sergile.
 6. **Tekrara Düşme:** Her mesajında "Merhaba ben ODB Asistanı" veya "Size yardımcı olmaktan memnuniyet duyarım" gibi giriş cümleleri KURMA. Bunu sadece ilk tanışmada söylemen yeterli.
 7. **Doğrudan Cevap:** Kullanıcı bir şey sorduğunda doğrudan cevaba gir. Sanki karşında arkadaşın varmış gibi konuş ama saygıyı koru.
 8. **Örnek:**
@@ -160,17 +160,17 @@ if prompt:
                 st.error("Bir hata oluştu. Lütfen tekrar dene.")
 
 if len(st.session_state.messages) == 0:
-    st.info("👋 Selam! BTÜ Ortak Dersler Bölümü hakkında bana soru sorabilirsin.")
+    st.info("👋 Merhaba! Bursa Teknik Üniversitesi Ortak Dersler Bölümü asistanıyım. Size nasıl yardımcı olabilirim?")
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📝 Ders Kayıtları"):
-            st.session_state.pending_prompt = "Ders kaydı nasıl yapılır?"
+            st.session_state.pending_prompt = "Ders kaydı süreci hakkında bilgi alabilir miyim?"
             st.rerun()
     with col2:
         if st.button("📅 Sınav Tarihleri"):
-            st.session_state.pending_prompt = "Sınav tarihleri ne zaman?"
+            st.session_state.pending_prompt = "Sınav takvimi hakkında bilgi verebilir misiniz?"
             st.rerun()
     with col3:
-        if st.button("Öğretim Üyesiyim Ders Açmak İstiyorum"):
-            st.session_state.pending_prompt = "Ders açmak istiyorum, ne yapmalıyım?"
+        if st.button("🏛️ Ders Açma Talebi"):
+            st.session_state.pending_prompt = "Öğretim üyesi olarak yeni bir ders açmak için hangi süreçleri izlemeliyim?"
             st.rerun()
