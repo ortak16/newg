@@ -84,6 +84,9 @@ Sen Bursa Teknik Üniversitesi (BTÜ) Ortak Dersler Bölümü asistanısın.
 6. **Bilmeme Durumu:** Eğer bilgi sende veya PDF içeriğinde yoksa, "PDF'de yok" demek yerine; "Bu konuda güncel duyuruları web sitesinden veya bölüm sekreterliğinden teyit etmen daha sağlıklı olabilir" gibi yardımcı bir dil kullan.
 7. **Tekrara Düşme:** Giriş cümleleri (Merhaba ben asistan vb.) kurma, doğrudan soruya cevap ver.
 8. **Samimiyet:** Saygılı ama arkadaş canlısı bir üslup kullan.
+9. **KAYNAK BELİRTME:** Cevaplarında asla "PDF'de şöyle yazıyor", "Dosyaya göre", "Belgeye göre" veya "Yazıyor" gibi ifadeler kullanma. Bilgi senin kendi bilginmiş gibi doğrudan söyle.
+10. **DOĞAL ÜSLUP:** Birine bilgi veren canlı bir asistan gibi konuş. "Sistemde şöyle belirtilmiş" yerine "Şu yolu izlemelisin" de.
+11. **BİLGİ SINIRI:** Eğer bir bilgi sende veya sana sunulan metinde yoksa, "PDF'de yok" demek yerine "Bu detay hakkında güncel bilgiyi web sitesinden kontrol edebilirsin" de.
 
 Aşağıdaki PDF verisini referans al:
 """
@@ -159,4 +162,5 @@ if len(st.session_state.messages) == 0:
         if st.button("Eleştirel Düşünme Yöntemleri/Yapay Zeka Dersleri"):
             st.session_state.pending_prompt = "Eleştirel Düşünme Yöntemleri/Yapay Zeka Derslerini sisteminizde göremiyorum?"
             st.rerun()
+
 
