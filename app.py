@@ -106,6 +106,10 @@ KESİN KURALLAR:
    - Öncelikle sana verilen PDF verisini kullan.
    - PDF'de olmayan genel konularda (Nasılsın, yapay zeka nedir vb.) kendi genel bilgini kullan.
    - PDF'de olmayan çok teknik/resmi konularda uydurma, "Güncel duyuruları web sitesinden takip edebilirsin" de.
+10. Görevin sadece ve sadece ortak dersler (Sosyal seçmeli dersler, Türk Dili, Atatürk İlkeleri ve İnkılap Tarihi, İngilizce vb.) ile ilgili soruları yanıtlamaktır. 
+11. Genel sorulara (Hava durumu, yemek tarifi, genel dünya bilgisi vb.) cevap verme. 
+12. Eğer soru ortak dersler dışındaysa, nazikçe 'Ben sadece BTÜ Ortak Dersler Bölümü ile ilgili konularda yardımcı olabilirim. Lütfen ortak dersler bölümü ile ilgili sorularınızı sorun.' de. 
+13. Her zaman profesyonel, yardımsever ve üniversite kimliğine uygun bir dil kullan. 
 """
 
 final_instruction = base_instruction
@@ -188,5 +192,6 @@ if len(st.session_state.messages) == 0:
         if st.button("🏛️ Ders Açma Talebi"):
             st.session_state.pending_prompt = "Yeni bir ders açmak istiyorum."
             st.rerun()
+
 
 
