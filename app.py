@@ -11,29 +11,40 @@ st.markdown("""
 header, footer, .stDeployButton, [data-testid="stStatusWidget"], button[title="View fullscreen"] {
     display: none !important;
 }
+
 [data-testid="stChatMessage"] {
     border-radius: 15px;
-    margin-bottom: 10px;
-    padding: 10px;
+    margin-bottom: 12px;
+    padding: 12px;
 }
-[data-testid="stChatMessage"]:nth-child(odd) {
-    background-color: #f8f9fa;
-    border-left: 4px solid #d32f2f;
+
+[data-testid="stChatMessageUser"] {
+    background-color: #113e68 !important;
+    color: #ffffff !important;
+    border-left: 5px solid #50b1c8 !important;
 }
-[data-testid="stChatMessage"]:nth-child(even) {
-    background-color: #e3f2fd;
-    border-right: 4px solid #007bff;
-    flex-direction: row-reverse;
-    text-align: right;
+
+[data-testid="stChatMessageAssistant"] {
+    background-color: #f0f2f6 !important;
+    color: #113e68 !important;
+    border-left: 5px solid #3bb290 !important;
 }
+
+[data-testid="stChatMessage"] p, [data-testid="stChatMessage"] li {
+    color: inherit !important;
+}
+
 [data-testid="stChatMessageAvatar"] {
-    width: 35px !important;
-    height: 35px !important;
+    background-color: #f6a758 !important;
+    border-radius: 50% !important;
 }
-[data-testid="stChatMessageAvatar"] img {
-    width: 35px !important;
-    height: 35px !important;
-    object-fit: contain;
+
+.stChatInput textarea {
+    border: 2px solid #50b1c8 !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #50b1c8 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -177,4 +188,5 @@ if len(st.session_state.messages) == 0:
         if st.button("🏛️ Ders Açma Talebi"):
             st.session_state.pending_prompt = "Yeni bir ders açmak istiyorum."
             st.rerun()
+
 
